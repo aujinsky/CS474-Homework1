@@ -14,7 +14,7 @@ count_vect = CountVectorizer()
 article_list = []
 pos_list = []
 date_list = []
-num_pages = 3
+num_pages = 49
 print("Evaluation and verification only done on keyword '태풍 사망'")
 keyword = input("Search keyword: ")
 keyword = keyword.replace(" ","+")
@@ -33,6 +33,7 @@ for i in range(num_pages):
         title_tag = article_html.find('h3', attrs={'class': 'tit_view'})
         if title_tag == None:	# if 
         	print("MISS")
+        	count = count - 1
         	continue
         title = title_tag.contents
         print(str(count) + ". " + title[0])
@@ -49,7 +50,7 @@ for i in range(num_pages):
         # hannanum.analyze(content_text)
         nouns = okt.nouns(content_text)
         counter = Counter(nouns)
-        print(counter.most_common(20)) # change to word2vec approach
+        # print(counter.most_common(20)) # change to word2vec approach
         article_list.append(' '.join(nouns)) # disgusting
         pos = okt.pos(content_text, stem=True)
         # print(pos)
@@ -68,11 +69,13 @@ if (num_pages > 2):
     Ytest = clf.predict(article_vector)
     print("validity: "+ str(Ytest))
     print(date_list)
-    for i in range(num_pages * 10):
+    for i in range(count):
 	    pos = pos_list[i]
 	    articletime = datetime.datetime.strptime(date_list[i], '%Y.%m.%d')
+	    if Ytest[i] == 0:
+	    	continue
 	    if [item for item in pos if item[0] == '어제']:
-	    	realtime = articletime - timedelta(days=1)
+	    	realtime = articletime - datetime.timedelta(days=1)
 	    	print(realtime)
 	    if [item for item in pos if item[0] == '오늘' or item[0] == '오전' or item[0] == '오후' or item[0] == '올해']:
 	    	realtime = articletime
