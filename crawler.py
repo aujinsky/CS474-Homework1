@@ -2,12 +2,17 @@ import requests
 import re
 import konlpy
 import nltk
+from collections import Counter
 from bs4 import BeautifulSoup
+from sklearn.feature_extraction.text import CountVectorizer
+
 
 okt= konlpy.tag.Okt()
 count = 0
-for i in range(1): # Naver Newspaper Research has maximum 4000 < 267 * 15 results
-    raw = requests.get("http://search.khan.co.kr/search.html?stb=khan&dm=5&q=%ED%83%9C%ED%92%8D+%ED%94%BC%ED%95%B4&pg="+str(4)+"&sort=1&d1=20010315~20210314")
+count_vect = CountVectorizer()
+article_list = []
+for i in range(30):
+    raw = requests.get("http://search.khan.co.kr/search.html?stb=khan&dm=5&q=태풍 사망&pg="+str(i)+"&sort=1&d1=20010315~20210314")
     html = BeautifulSoup(raw.text, "html.parser")
     result = html.find_all('dl', attrs={'class': 'phArtc'})
     atag = [a.find('a') for a in result]
@@ -30,6 +35,14 @@ for i in range(1): # Naver Newspaper Research has maximum 4000 < 267 * 15 result
         # print(content_text)
         # hannanum = konlpy.tag.Hannanum()
         # hannanum.analyze(content_text)
+        nouns = okt.nouns(content_text)
+        counter = Counter(nouns)
+        article_list.append(' '.join(nouns)) # disgusting
         pos = okt.pos(content_text, stem=True)
         posnum = [item for item in pos if item[1] == 'Number']
-        print(posnum)
+# print(article_list)
+# article_list = ['인공지능 자연어 처리 자연어 처리', '자연어 열대어 열대어 열대어', '처리 소리 물리 구리']
+article_vector = count_vect.fit_transform(article_list)
+print(article_vector)
+
+        # print(posnum)
