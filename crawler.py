@@ -1,26 +1,35 @@
 import requests
 import re
-from konlpy.tag import Kkma
-
+import konlpy
+import nltk
 from bs4 import BeautifulSoup
 
-
-for i in range(266): # Naver Newspaper Research has maximum 4000 < 267 * 15 results
-    raw = requests.get("https://m.search.naver.com/search.naver?where=m_news&query=%ED%83%9C%ED%92%8D&sm=mtb_tnw&sort=1&photo=0&field=0&pd=3&ds=2001.03.14&de=2021.03.13&docid=&related=0&mynews=1&office_type=2&office_section_code=8&news_office_checked=1001&nso=so%3Add%2Cp%3Afrom20010314to20210313&start="+str(15*i+1))
+okt= konlpy.tag.Okt()
+count = 0
+for i in range(1): # Naver Newspaper Research has maximum 4000 < 267 * 15 results
+    raw = requests.get("http://search.khan.co.kr/search.html?stb=khan&dm=5&q=%ED%83%9C%ED%92%8D+%ED%94%BC%ED%95%B4&pg="+str(4)+"&sort=1&d1=20010315~20210314")
     html = BeautifulSoup(raw.text, "html.parser")
-    result = html.find_all('a', attrs={'class': 'news_tit'})
-    urls = [a['href'] for a in result]
+    result = html.find_all('dl', attrs={'class': 'phArtc'})
+    atag = [a.find('a') for a in result]
+    urls = [a['href'] for a in atag]
     for url in urls:
-        article_raw = requests.get(url)
+        count = count + 1
+        artid = re.compile(r"artid=\d+");
+        url = "https://m.khan.co.kr/view.html?" + artid.search(url).group()
+        article_raw = requests.get(url, headers = {'User-Agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 14_2 like Mac OS X)'}) 
         article_html = BeautifulSoup(article_raw.text, "html.parser")
-        title_tag = article_html.find('h2', attrs={'class': 'media_end_head_headline'})
+        title_tag = article_html.find('h3', attrs={'class': 'tit_view'})
+        if title_tag == None:	# if 
+        	print("MISS")
+        	continue
         title = title_tag.contents
-        content_tag = article_html.find('div', attrs={'class': 'go_trans _article_content'})
-        content_text = content_tag.get_text()
-        print(content_text)
-        kkma = Kkma()
-        Kkma.analyze(content_text)
-        print(content_text)
-        break
-    break
-    
+        print(str(count) + ". " + title[0])
+        content_tags = article_html.find_all('p', attrs={'class': 'art_txt'})
+        content_text = ''.join([content_tag.getText() for content_tag in content_tags])
+        content_text = re.sub('\t', '', content_text)
+        # print(content_text)
+        # hannanum = konlpy.tag.Hannanum()
+        # hannanum.analyze(content_text)
+        pos = okt.pos(content_text, stem=True)
+        posnum = [item for item in pos if item[1] == 'Number']
+        print(posnum)
